@@ -179,5 +179,4 @@ public class AffinityConnect {
 			e.printStackTrace();
 		}
 	}
-
 }
