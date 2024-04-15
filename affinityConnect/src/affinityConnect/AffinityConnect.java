@@ -4,12 +4,26 @@ import java.awt.EventQueue;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Properties;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+
+import org.jdatepicker.impl.*;
+
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFormattedTextField;
+
 import java.awt.Font;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.awt.event.ActionEvent;
+import javax.swing.SwingConstants;
 
 class ConnectionSingleton {
 	private static Connection con;
@@ -24,13 +38,33 @@ class ConnectionSingleton {
 	}
 }
 
+class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+    private String datePattern = "yyyy-MM-dd";
+    private SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
+
+    @Override
+    public Object stringToValue(String text) throws ParseException {
+        return dateFormatter.parseObject(text);
+    }
+
+    @Override
+    public String valueToString(Object value) throws ParseException {
+        if (value != null) {
+            Calendar cal = (Calendar) value;
+            return dateFormatter.format(cal.getTime());
+        }
+        return "";
+    }
+}
+
 public class AffinityConnect {
 
 	private JFrame frmAffinityConnect;
 	private Connection con;
 	private JTextField textFieldName;
 	private JTextField textFieldLastName;
-	private JTextField textField;
+	private JTextField textFieldPicText;
+	private JDatePickerImpl datePicker;
 
 	/**
 	 * Launch the application.
@@ -66,53 +100,77 @@ public class AffinityConnect {
 		frmAffinityConnect.getContentPane().setLayout(null);
 		
 		JLabel lblName = new JLabel("Name:");
-		lblName.setBounds(50, 50, 54, 14);
+		lblName.setBounds(30, 33, 54, 14);
 		frmAffinityConnect.getContentPane().add(lblName);
 		
 		textFieldName = new JTextField();
-		textFieldName.setBounds(95, 47, 86, 20);
+		textFieldName.setBounds(75, 30, 86, 20);
 		frmAffinityConnect.getContentPane().add(textFieldName);
 		textFieldName.setColumns(10);
 		
 		JLabel lblLastName = new JLabel("Last Name:");
-		lblLastName.setBounds(202, 50, 76, 14);
+		lblLastName.setBounds(182, 33, 76, 14);
 		frmAffinityConnect.getContentPane().add(lblLastName);
 		
 		textFieldLastName = new JTextField();
-		textFieldLastName.setBounds(270, 47, 149, 20);
+		textFieldLastName.setBounds(250, 30, 149, 20);
 		frmAffinityConnect.getContentPane().add(textFieldLastName);
 		textFieldLastName.setColumns(10);
 		
 		JLabel lblDateOfBirth = new JLabel("Date of birth:");
-		lblDateOfBirth.setBounds(429, 50, 76, 14);
+		lblDateOfBirth.setBounds(409, 33, 76, 14);
 		frmAffinityConnect.getContentPane().add(lblDateOfBirth);
 		
-		JLabel lblImage = new JLabel("Select Image:");
-		lblImage.setBounds(50, 86, 86, 14);
+		JLabel lblImage = new JLabel("Image:");
+		lblImage.setBounds(30, 69, 54, 14);
 		frmAffinityConnect.getContentPane().add(lblImage);
 		
-		textField = new JTextField();
-		textField.setBounds(146, 83, 273, 20);
-		frmAffinityConnect.getContentPane().add(textField);
-		textField.setColumns(10);
+		textFieldPicText = new JTextField();
+		textFieldPicText.setBounds(85, 66, 273, 20);
+		frmAffinityConnect.getContentPane().add(textFieldPicText);
+		textFieldPicText.setColumns(10);
 		
 		JButton btnAddPerson = new JButton("Add Person");
-		btnAddPerson.setBounds(83, 130, 110, 23);
+		btnAddPerson.setBounds(83, 476, 110, 23);
 		frmAffinityConnect.getContentPane().add(btnAddPerson);
 		
 		JButton btnUpdatePerson = new JButton("Update Person");
-		btnUpdatePerson.setBounds(276, 130, 110, 23);
+		btnUpdatePerson.setBounds(276, 476, 110, 23);
 		frmAffinityConnect.getContentPane().add(btnUpdatePerson);
 		
 		JButton btnDeletePerson = new JButton("Delete Person");
-		btnDeletePerson.setBounds(469, 130, 116, 23);
+		btnDeletePerson.setBounds(469, 476, 116, 23);
 		frmAffinityConnect.getContentPane().add(btnDeletePerson);
 		
 		JLabel lblHobbies = new JLabel("Hobbies");
-		lblHobbies.setFont(new Font("Tahoma", Font.PLAIN, 11));
-		lblHobbies.setBounds(311, 203, 46, 14);
+		lblHobbies.setHorizontalAlignment(SwingConstants.CENTER);
+		lblHobbies.setFont(new Font("Tahoma", Font.BOLD, 12));
+		lblHobbies.setBounds(301, 97, 65, 14);
 		frmAffinityConnect.getContentPane().add(lblHobbies);
 		
+		JButton btnNewButton = new JButton("Select Image");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser chooser = new JFileChooser();
+		        chooser.showOpenDialog(null);
+		        File f= chooser.getSelectedFile();
+		        String fileName= f.getAbsolutePath();
+		        textFieldPicText.setText(fileName);
+			}
+		});
+		btnNewButton.setBounds(368, 65, 107, 23);
+		frmAffinityConnect.getContentPane().add(btnNewButton);
+		
+		UtilDateModel model = new UtilDateModel();
+		Properties properties = new Properties();
+		properties.put("text.today", "Today");
+        properties.put("text.month", "Month");
+        properties.put("text.year", "Year");	
+        JDatePanelImpl datePanel = new JDatePanelImpl(model, properties);
+        datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
+        datePicker.setBounds(495, 30, 150, 25);
+        frmAffinityConnect.getContentPane().add(datePicker);
+        
 		try {
 			con = ConnectionSingleton.getConnection();
 		} catch (SQLException e) {
