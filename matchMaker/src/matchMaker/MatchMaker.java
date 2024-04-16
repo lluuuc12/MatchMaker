@@ -78,6 +78,7 @@ public class MatchMaker {
 	private JTextField textFieldFirstName;
 	private JTextField textFieldLastName;
 	private JTextField textFieldPicText;
+	private static UtilDateModel modelDatePicker;
 	private JDatePickerImpl datePicker;
 	private static DefaultTableModel tableModelPersons;
 	private JTable tablePersons;
@@ -165,12 +166,12 @@ public class MatchMaker {
 		lblDateOfBirth.setBounds(409, 33, 76, 14);
 		frmMatchMaker.getContentPane().add(lblDateOfBirth);
 
-		UtilDateModel model = new UtilDateModel();
+		modelDatePicker = new UtilDateModel();
 		Properties properties = new Properties();
 		properties.put("text.today", "Today");
 		properties.put("text.month", "Month");
 		properties.put("text.year", "Year");
-		JDatePanelImpl datePanel = new JDatePanelImpl(model, properties);
+		JDatePanelImpl datePanel = new JDatePanelImpl(modelDatePicker, properties);
 		datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
 		datePicker.setBounds(495, 30, 150, 25);
 		frmMatchMaker.getContentPane().add(datePicker);
@@ -274,8 +275,10 @@ public class MatchMaker {
 				selectedPerson = (int) tableModelPersons.getValueAt(i, 0);
 				textFieldFirstName.setText(tableModelPersons.getValueAt(i, 1).toString());
 				textFieldLastName.setText(tableModelPersons.getValueAt(i, 2).toString());
-				
-				textFieldPicText.setText(tableModelPersons.getValueAt(i, 5).toString());
+				if (tableModelPersons.getValueAt(i, 5) != null) {
+					textFieldPicText.setText(tableModelPersons.getValueAt(i, 5).toString());
+				}
+				modelDatePicker.setValue((java.sql.Date) tableModelPersons.getValueAt(i, 3));
 			}
 		});
 		tablePersons.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
