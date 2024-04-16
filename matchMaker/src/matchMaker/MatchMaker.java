@@ -97,6 +97,7 @@ public class MatchMaker {
 	private JScrollPane scrollPanePersons;
 	private static int selectedPerson;
 	private JLabel imageLabel;
+	private JTextArea textArea;
 
 	public static void refresh() {
 		Statement stmt;
@@ -386,9 +387,6 @@ public class MatchMaker {
 					upd_pstmt.setInt(6, selectedPerson);
 					upd_pstmt.executeUpdate();
 					upd_pstmt.close();
-					upd_pstmt.setInt(6, selectedPerson);
-					upd_pstmt.executeUpdate();
-					upd_pstmt.close();
 
 					JCheckBox[] hobbyCheckBoxes = { chckbxSports, chckbxMusic, chckbxReading, chckbxTraveling,
 							chckbxCooking, chckbxMovies, chckbxArt, chckbxGames };
@@ -455,6 +453,37 @@ public class MatchMaker {
 				textFieldLastName.setText(tableModelPersons.getValueAt(i, 2).toString());
 				modelDatePicker.setValue((java.sql.Date) tableModelPersons.getValueAt(i, 3));
 				displayImage(selectedPerson);
+				
+				try {
+		            con = ConnectionSingleton.getConnection();
+		            PreparedStatement pstmt = con.prepareStatement(
+		                "SELECT p2.first_name, p2.last_name FROM Persons_Hobbies ph1 " +
+		                "INNER JOIN Persons_Hobbies ph2 ON ph1.cod_hobby = ph2.cod_hobby AND ph1.cod_person != ph2.cod_person " +
+		                "INNER JOIN Persons p1 ON ph1.cod_person = p1.cod_person " +
+		                "INNER JOIN Persons p2 ON ph2.cod_person = p2.cod_person " +
+		                "WHERE p1.cod_person = ? AND p1.cod_person != p2.cod_person " +
+		                "GROUP BY p2.cod_person " +
+		                "HAVING COUNT(*) >= 3");
+		            
+		            pstmt.setInt(1, selectedPerson);
+		            
+		            ResultSet rs = pstmt.executeQuery();
+		            textArea.setText(""); 
+		            
+		            while (rs.next()) {
+		                String firstName = rs.getString("first_name");
+		                String lastName = rs.getString("last_name");
+		                
+		                // Agregar el nombre de la persona compatible al TextArea
+		                textArea.append(firstName + " " + lastName + "\n");
+		            }
+		            
+		            pstmt.close();
+		        } catch (SQLException ex) {
+		            System.err.println(ex.getMessage());
+		            ex.getErrorCode();
+		            ex.printStackTrace();
+		        }
 			}
 		});
 		tablePersons.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -473,7 +502,7 @@ public class MatchMaker {
 		lblMatches.setBounds(700, 240, 70, 15);
 		frmMatchMaker.getContentPane().add(lblMatches);
 
-		JTextArea textArea = new JTextArea();
+		textArea = new JTextArea();
 		textArea.setEditable(false);
 		textArea.setBounds(665, 267, 138, 114);
 		frmMatchMaker.getContentPane().add(textArea);
