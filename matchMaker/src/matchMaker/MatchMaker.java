@@ -514,25 +514,7 @@ public class MatchMaker {
 		imageLabel.setBounds(663, 106, 140, 125);
 		frmMatchMaker.getContentPane().add(imageLabel);
 
-		try {
-			con = ConnectionSingleton.getConnection();
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(
-					"SELECT cod_person, first_name, last_name, birth_date, age FROM Persons ORDER BY cod_person");
-			while (rs.next()) {
-				Object[] row = new Object[5];
-				row[0] = rs.getInt("cod_person");
-				row[1] = rs.getString("first_name");
-				row[2] = rs.getString("last_name");
-				row[3] = rs.getDate("birth_date");
-				row[4] = rs.getInt("age");
-				tableModelPersons.addRow(row);
-			}
-		} catch (SQLException e) {
-			System.err.println(e.getMessage());
-			e.getErrorCode();
-			e.printStackTrace();
-		}
+		refresh();
 
 		try {
 			con = ConnectionSingleton.getConnection();
