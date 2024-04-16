@@ -92,7 +92,7 @@ public class MatchMaker {
 		try {
 			con = ConnectionSingleton.getConnection();
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM Persons");
+			rs = stmt.executeQuery("SELECT * FROM Persons ORDER BY cod_person");
 			while (rs.next()) {
 				Object[] row = new Object[6];
 				row[0] = rs.getInt("cod_person");
@@ -232,11 +232,39 @@ public class MatchMaker {
 				}
 			}
 		});
-		btnAddPerson.setBounds(83, 391, 110, 23);
+		btnAddPerson.setBounds(68, 391, 132, 23);
 		frmMatchMaker.getContentPane().add(btnAddPerson);
 
 		JButton btnUpdatePerson = new JButton("Update Person");
-		btnUpdatePerson.setBounds(276, 391, 110, 23);
+		btnUpdatePerson.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent a) {
+				try {
+					con = ConnectionSingleton.getConnection();
+					java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
+					java.sql.Date birthDate = new java.sql.Date(selectedDate.getTime());
+					LocalDate dob = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+					LocalDate today = LocalDate.now();
+					int age = Period.between(dob, today).getYears();
+					String photoPath = textFieldPicText.getText();
+					
+					PreparedStatement upd_pstmt = con.prepareStatement("UPDATE Persons SET first_name = ?, last_name = ?, birth_date = ?, age = ?, photo = ? WHERE cod_person = ?");
+					upd_pstmt.setString(1, textFieldFirstName.getText());
+					upd_pstmt.setString(2, textFieldLastName.getText());
+					upd_pstmt.setDate(3, birthDate);
+					upd_pstmt.setInt(4, age);
+					upd_pstmt.setString(5, photoPath);
+					upd_pstmt.setInt(6, selectedPerson);
+					upd_pstmt.executeUpdate();
+					upd_pstmt.close();
+					refresh();
+				} catch (SQLException e) {
+					System.err.println(e.getMessage());
+					e.getErrorCode();
+					e.printStackTrace();
+				}
+			}
+		});
+		btnUpdatePerson.setBounds(268, 391, 132, 23);
 		frmMatchMaker.getContentPane().add(btnUpdatePerson);
 
 		JButton btnDeletePerson = new JButton("Delete Person");
@@ -256,7 +284,7 @@ public class MatchMaker {
 				}
 			}
 		});
-		btnDeletePerson.setBounds(469, 391, 116, 23);
+		btnDeletePerson.setBounds(468, 391, 132, 23);
 		frmMatchMaker.getContentPane().add(btnDeletePerson);
 
 		tableModelPersons = new DefaultTableModel();
@@ -290,7 +318,7 @@ public class MatchMaker {
 		try {
 			con = ConnectionSingleton.getConnection();
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM Persons");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM Persons ORDER BY cod_person");
 			while (rs.next()) {
 				Object[] row = new Object[6];
 				row[0] = rs.getInt("cod_person");
