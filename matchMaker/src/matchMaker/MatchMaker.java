@@ -419,6 +419,9 @@ public class MatchMaker {
 					PreparedStatement del_pstmt = con.prepareStatement("DELETE FROM Persons WHERE cod_person = ?");
 					del_pstmt.setInt(1, selectedPerson);
 					del_pstmt.executeUpdate();
+					del_pstmt = con.prepareStatement("DELETE FROM Persons_Hobbies WHERE cod_person = ?");
+					del_pstmt.setInt(1, selectedPerson);
+					del_pstmt.executeUpdate();
 					del_pstmt.close();
 					refresh();
 				} catch (SQLException e) {
