@@ -376,7 +376,16 @@ public class MatchMaker {
 					upd_pstmt.setString(2, textFieldLastName.getText());
 					upd_pstmt.setDate(3, birthDate);
 					upd_pstmt.setInt(4, age);
-					upd_pstmt.setString(5, photoPath);
+					if (!photoPath.isEmpty()) {
+					    File imageFile = new File(photoPath);
+					    FileInputStream fis = new FileInputStream(imageFile);
+					    upd_pstmt.setBlob(5, fis, (int) imageFile.length());
+					} else {
+					    upd_pstmt.setNull(5, java.sql.Types.BLOB);
+					}
+					upd_pstmt.setInt(6, selectedPerson);
+					upd_pstmt.executeUpdate();
+					upd_pstmt.close();
 					upd_pstmt.setInt(6, selectedPerson);
 					upd_pstmt.executeUpdate();
 					upd_pstmt.close();
@@ -395,6 +404,8 @@ public class MatchMaker {
 					System.err.println(e.getMessage());
 					e.getErrorCode();
 					e.printStackTrace();
+				} catch (FileNotFoundException fileNotFound) {
+					
 				}
 			}
 		});
