@@ -515,13 +515,5 @@ public class MatchMaker {
 		frmMatchMaker.getContentPane().add(imageLabel);
 
 		refresh();
-
-		try {
-			con = ConnectionSingleton.getConnection();
-		} catch (SQLException e) {
-			System.err.println(e.getMessage());
-			e.getErrorCode();
-			e.printStackTrace();
-		}
 	}
 }
