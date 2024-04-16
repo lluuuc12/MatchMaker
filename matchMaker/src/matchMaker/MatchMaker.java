@@ -54,9 +54,9 @@ class ConnectionSingleton {
 	private static Connection con;
 
 	public static Connection getConnection() throws SQLException {
-		String url = "jdbc:mysql://127.0.0.1:3307/matchmaker";
-		String user = "alumno";
-		String password = "alumno";
+		String url = "jdbc:postgresql://127.0.0.1:5433/matchmaker";
+		String user = "postgres";
+		String password = "bitnamio";
 		if (con == null || con.isClosed()) {
 			con = DriverManager.getConnection(url, user, password);
 		}
@@ -142,30 +142,29 @@ public class MatchMaker {
 	}
 
 	private void displayImage(int selectedPerson) {
-		try {
-			con = ConnectionSingleton.getConnection();
-			PreparedStatement pstmt = con.prepareStatement("SELECT photo FROM Persons WHERE cod_person = ?");
-			pstmt.setInt(1, selectedPerson);
-			ResultSet rs = pstmt.executeQuery();
-			if (rs.next()) {
-				Blob blob = rs.getBlob("photo");
-				if (blob != null) {
-					int blobLength = (int) blob.length();
-					byte[] bytes = blob.getBytes(1, blobLength);
-					ImageIcon imageIcon = new ImageIcon(bytes);
-					Image image = imageIcon.getImage();
-					Image scaledImage = image.getScaledInstance(imageLabel.getWidth(), imageLabel.getHeight(),
-							Image.SCALE_SMOOTH);
-					imageIcon = new ImageIcon(scaledImage);
-					imageLabel.setIcon(imageIcon);
-				}
-			}
-			pstmt.close();
-		} catch (SQLException e) {
-			System.err.println(e.getMessage());
-			e.printStackTrace();
-		}
+	    try {
+	        con = ConnectionSingleton.getConnection();
+	        PreparedStatement pstmt = con.prepareStatement("SELECT photo FROM Persons WHERE cod_person = ?");
+	        pstmt.setInt(1, selectedPerson);
+	        ResultSet rs = pstmt.executeQuery();
+	        if (rs.next()) {
+	            byte[] bytes = rs.getBytes("photo");
+	            if (bytes != null) {
+	                ImageIcon imageIcon = new ImageIcon(bytes);
+	                Image image = imageIcon.getImage();
+	                Image scaledImage = image.getScaledInstance(imageLabel.getWidth(), imageLabel.getHeight(),
+	                        Image.SCALE_SMOOTH);
+	                imageIcon = new ImageIcon(scaledImage);
+	                imageLabel.setIcon(imageIcon);
+	            }
+	        }
+	        pstmt.close();
+	    } catch (SQLException e) {
+	        System.err.println(e.getMessage());
+	        e.printStackTrace();
+	    }
 	}
+
 
 	/**
 	 * Launch the application.
@@ -297,64 +296,67 @@ public class MatchMaker {
 		JButton btnAddPerson = new JButton("Add Person");
 		btnAddPerson.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent a) {
-				try {
-					con = ConnectionSingleton.getConnection();
-					java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
-					java.sql.Date birthDate = new java.sql.Date(selectedDate.getTime());
-					LocalDate dob = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-					LocalDate today = LocalDate.now();
-					int age = Period.between(dob, today).getYears();
-					String photoPath = textFieldPicText.getText();
+			    try {
+			        con = ConnectionSingleton.getConnection();
+			        java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
+			        java.sql.Date birthDate = new java.sql.Date(selectedDate.getTime());
+			        LocalDate dob = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			        LocalDate today = LocalDate.now();
+			        int age = Period.between(dob, today).getYears();
+			        String photoPath = textFieldPicText.getText();
 
-					File imageFile = null;
-					FileInputStream fis = null;
-					if (!photoPath.isEmpty()) {
-						imageFile = new File(photoPath);
-						fis = new FileInputStream(imageFile);
-					}
+			        byte[] imageBytes = null;
+			        FileInputStream fis = null;
+			        if (!photoPath.isEmpty()) {
+			            File imageFile = new File(photoPath);
+			            fis = new FileInputStream(imageFile);
+			            imageBytes = new byte[(int) imageFile.length()];
+			            fis.read(imageBytes);
+			        }
 
-					PreparedStatement ins_pstmt = con.prepareStatement(
-							"INSERT INTO Persons (first_name, last_name, birth_date, age, photo) VALUES (?, ?, ?, ?, ?)",
-							Statement.RETURN_GENERATED_KEYS);
-					ins_pstmt.setString(1, textFieldFirstName.getText());
-					ins_pstmt.setString(2, textFieldLastName.getText());
-					ins_pstmt.setDate(3, birthDate);
-					ins_pstmt.setInt(4, age);
-					if (imageFile != null) {
-						ins_pstmt.setBlob(5, fis, (int) imageFile.length());
-					} else {
-						ins_pstmt.setNull(5, java.sql.Types.BLOB);
-					}
-					ins_pstmt.executeUpdate();
+			        PreparedStatement ins_pstmt = con.prepareStatement(
+			                "INSERT INTO Persons (first_name, last_name, birth_date, age, photo) VALUES (?, ?, ?, ?, ?)",
+			                Statement.RETURN_GENERATED_KEYS);
+			        ins_pstmt.setString(1, textFieldFirstName.getText());
+			        ins_pstmt.setString(2, textFieldLastName.getText());
+			        ins_pstmt.setDate(3, birthDate);
+			        ins_pstmt.setInt(4, age);
+			        if (imageBytes != null) {
+			            ins_pstmt.setBytes(5, imageBytes);
+			        } else {
+			            ins_pstmt.setNull(5, java.sql.Types.BINARY);
+			        }
+			        ins_pstmt.executeUpdate();
 
-					ResultSet generatedKeys = ins_pstmt.getGeneratedKeys();
-					int insertedPersonId = -1;
-					if (generatedKeys.next()) {
-						insertedPersonId = generatedKeys.getInt(1);
-					}
+			        ResultSet generatedKeys = ins_pstmt.getGeneratedKeys();
+			        int insertedPersonId = -1;
+			        if (generatedKeys.next()) {
+			            insertedPersonId = generatedKeys.getInt(1);
+			        }
 
-					if (insertedPersonId != -1) {
-						JCheckBox[] hobbyCheckBoxes = { chckbxSports, chckbxMusic, chckbxReading, chckbxTraveling,
-								chckbxCooking, chckbxMovies, chckbxArt, chckbxGames };
-						for (int i = 0; i < hobbyCheckBoxes.length; i++) {
-							JCheckBox checkBox = hobbyCheckBoxes[i];
-							if (checkBox.isSelected()) {
-								insertHobbies(insertedPersonId, (i + 1));
-							}
-						}
-					}
-					ins_pstmt.close();
-					refresh();
-				} catch (SQLException e) {
-					System.err.println(e.getMessage());
-					e.getErrorCode();
-					e.printStackTrace();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+			        if (insertedPersonId != -1) {
+			            JCheckBox[] hobbyCheckBoxes = { chckbxSports, chckbxMusic, chckbxReading, chckbxTraveling,
+			                    chckbxCooking, chckbxMovies, chckbxArt, chckbxGames };
+			            for (int i = 0; i < hobbyCheckBoxes.length; i++) {
+			                JCheckBox checkBox = hobbyCheckBoxes[i];
+			                if (checkBox.isSelected()) {
+			                    insertHobbies(insertedPersonId, (i + 1));
+			                }
+			            }
+			        }
+			        ins_pstmt.close();
+			        refresh();
+			    } catch (SQLException e) {
+			        System.err.println(e.getMessage());
+			        e.getErrorCode();
+			        e.printStackTrace();
+			    } catch (FileNotFoundException e) {
+			        e.printStackTrace();
+			    } catch (IOException e) {
+			        e.printStackTrace();
+			    } 
 			}
+
 		});
 		btnAddPerson.setBounds(56, 357, 149, 23);
 		frmMatchMaker.getContentPane().add(btnAddPerson);
@@ -362,50 +364,60 @@ public class MatchMaker {
 		JButton btnUpdatePerson = new JButton("Update Person");
 		btnUpdatePerson.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent a) {
-				try {
-					con = ConnectionSingleton.getConnection();
-					java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
-					java.sql.Date birthDate = new java.sql.Date(selectedDate.getTime());
-					LocalDate dob = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-					LocalDate today = LocalDate.now();
-					int age = Period.between(dob, today).getYears();
-					String photoPath = textFieldPicText.getText();
+			    try {
+			        con = ConnectionSingleton.getConnection();
+			        java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
+			        java.sql.Date birthDate = new java.sql.Date(selectedDate.getTime());
+			        LocalDate dob = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			        LocalDate today = LocalDate.now();
+			        int age = Period.between(dob, today).getYears();
+			        String photoPath = textFieldPicText.getText();
 
-					PreparedStatement upd_pstmt = con.prepareStatement(
-							"UPDATE Persons SET first_name = ?, last_name = ?, birth_date = ?, age = ?, photo = ? WHERE cod_person = ?");
-					upd_pstmt.setString(1, textFieldFirstName.getText());
-					upd_pstmt.setString(2, textFieldLastName.getText());
-					upd_pstmt.setDate(3, birthDate);
-					upd_pstmt.setInt(4, age);
-					if (!photoPath.isEmpty()) {
-					    File imageFile = new File(photoPath);
-					    FileInputStream fis = new FileInputStream(imageFile);
-					    upd_pstmt.setBlob(5, fis, (int) imageFile.length());
-					} else {
-					    upd_pstmt.setNull(5, java.sql.Types.BLOB);
-					}
-					upd_pstmt.setInt(6, selectedPerson);
-					upd_pstmt.executeUpdate();
-					upd_pstmt.close();
+			        byte[] imageBytes = null;
+			        FileInputStream fis = null;
+			        if (!photoPath.isEmpty()) {
+			            File imageFile = new File(photoPath);
+			            fis = new FileInputStream(imageFile);
+			            imageBytes = new byte[(int) imageFile.length()];
+			            fis.read(imageBytes);
+			        }
 
-					JCheckBox[] hobbyCheckBoxes = { chckbxSports, chckbxMusic, chckbxReading, chckbxTraveling,
-							chckbxCooking, chckbxMovies, chckbxArt, chckbxGames };
-					for (int i = 0; i < hobbyCheckBoxes.length; i++) {
-						JCheckBox checkBox = hobbyCheckBoxes[i];
-						if (checkBox.isSelected()) {
-							insertHobbies(selectedPerson, (i + 1));
-						}
-					}
+			        PreparedStatement upd_pstmt = con.prepareStatement(
+			                "UPDATE Persons SET first_name = ?, last_name = ?, birth_date = ?, age = ?, photo = ? WHERE cod_person = ?");
+			        upd_pstmt.setString(1, textFieldFirstName.getText());
+			        upd_pstmt.setString(2, textFieldLastName.getText());
+			        upd_pstmt.setDate(3, birthDate);
+			        upd_pstmt.setInt(4, age);
+			        if (imageBytes != null) {
+			            upd_pstmt.setBytes(5, imageBytes);
+			        } else {
+			            upd_pstmt.setNull(5, java.sql.Types.BINARY);
+			        }
+			        upd_pstmt.setInt(6, selectedPerson);
+			        upd_pstmt.executeUpdate();
+			        upd_pstmt.close();
 
-					refresh();
-				} catch (SQLException e) {
-					System.err.println(e.getMessage());
-					e.getErrorCode();
-					e.printStackTrace();
-				} catch (FileNotFoundException fileNotFound) {
-					
-				}
+			        JCheckBox[] hobbyCheckBoxes = { chckbxSports, chckbxMusic, chckbxReading, chckbxTraveling,
+			                chckbxCooking, chckbxMovies, chckbxArt, chckbxGames };
+			        for (int i = 0; i < hobbyCheckBoxes.length; i++) {
+			            JCheckBox checkBox = hobbyCheckBoxes[i];
+			            if (checkBox.isSelected()) {
+			                insertHobbies(selectedPerson, (i + 1));
+			            }
+			        }
+
+			        refresh();
+			    } catch (SQLException e) {
+			        System.err.println(e.getMessage());
+			        e.getErrorCode();
+			        e.printStackTrace();
+			    } catch (FileNotFoundException fileNotFound) {
+			        
+			    } catch (IOException e) {
+			        e.printStackTrace();
+			    } 
 			}
+
 		});
 		btnUpdatePerson.setBounds(261, 357, 149, 23);
 		frmMatchMaker.getContentPane().add(btnUpdatePerson);
