@@ -3,5 +3,5 @@ It provides a simple and intuitive interface for adding, updating, and deleting 
 
 Technologies Used:
 - Java
-- PostgreSQL
 - Java Swing
+- PostgreSQL
