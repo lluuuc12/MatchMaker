@@ -128,14 +128,6 @@ public class MatchMaker {
 		insHobby_pstmt.close();
 	}
 
-	public static void updateHobbies(int personId, int hobbyId) throws SQLException {
-		PreparedStatement delete_stmt = con.prepareStatement("DELETE FROM Persons_Hobbies WHERE cod_person = ?");
-		delete_stmt.setInt(1, personId);
-		delete_stmt.executeUpdate();
-		delete_stmt.close();
-		insertHobbies(personId, hobbyId);
-	}
-
 	private void displayImage(int selectedPerson) {
 		try {
 			con = ConnectionSingleton.getConnection();
@@ -394,6 +386,11 @@ public class MatchMaker {
 					upd_pstmt.setInt(6, selectedPerson);
 					upd_pstmt.executeUpdate();
 					upd_pstmt.close();
+					
+					PreparedStatement delete_stmt = con.prepareStatement("DELETE FROM Persons_Hobbies WHERE cod_person = ?");
+					delete_stmt.setInt(1, selectedPerson);
+					delete_stmt.executeUpdate();
+					delete_stmt.close();
 
 					for (int i = 0; i < hobbyCheckBoxes.length; i++) {
 						JCheckBox checkBox = hobbyCheckBoxes[i];
