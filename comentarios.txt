@@ -1,0 +1,3 @@
+Nota: +0.5
+
+  Has añadido jar, otro SGBD, la consulta para el match es correcta, el diseño y la estructura ok...! Todo correcto.
